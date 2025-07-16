@@ -1,0 +1,366 @@
+:root {
+
+  --red: #B1443D;
+  --orange: #CD8753;
+  --yellow: #D9BF69;
+  --green: #8E9C61;
+  --lblue: #80B0AE;
+  --blue: #4D53AF;
+  --purple: #9F67A9;
+  --lbrown: #F7E6C8;
+  --dbrown: #9A754E;
+
+  --px: 60px;
+
+
+}
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Merriweather, serif;
+  width: 100%;
+}
+
+main {
+  background-color: #F7E6C8;
+
+  /* background-color: #D7EAE9; */
+}
+
+em {
+  font-style: normal;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--red);
+}
+
+section {
+  display: flex;
+  flex-flow: column;
+  width: 100%;
+  align-items: center;
+  padding: 25px;
+  box-sizing: border-box;
+}
+
+#hackclub-logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200px;
+}
+
+section#open {
+  height: 100vh;
+  justify-content: center;
+  /* padding-top: 100px; */
+}
+
+#open-logo {
+  width: 80%;
+}
+
+
+section#sample {
+  background-color: var(--dbrown);
+
+}
+
+section#sample #text {
+  padding: 45px;
+}
+
+section#sample .interactive {
+  display: flex;
+  flex-flow: row;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  align-items: center;
+  box-sizing: border-box;
+
+}
+/*
+
+section#sample .interactive  {
+  width: 100%;
+  aspect-ratio: 1.4;
+} */
+
+#numbers {
+  background-color: white;
+  width: 100%;
+  aspect-ratio: 1.4;
+
+}
+
+#samples {
+  background-color: white;
+  width: 100%;
+  aspect-ratio: 1.4;
+
+}
+
+
+
+
+section#prize {
+
+  flex-flow: row;
+  justify-content: center;
+  gap: 20px;
+  padding: 45px;
+
+}
+
+section#prize div {
+  background-color: white;
+  aspect-ratio: 0.75;
+  width: 100%;
+  border-radius: 25px;
+}
+
+section#prize div#prize-1 {
+  transform: rotate(3deg);
+  background-color: var(--red);
+}
+
+section#prize div#prize-2 {
+  transform: rotate(-3deg);
+  background-color: var(--yellow);
+}
+
+section#prize div#prize-3 {
+  transform: rotate(5deg);
+  background-color: var(--green);
+}
+
+
+section#faq {
+  background-color: var(--dbrown);
+}
+
+
+
+
+
+
+
+
+
+.game-box {
+  display: flex;
+  flex-flow: column;
+}
+
+.box {
+  /* border: 3px solid var(--blue); */
+  /* background-color: var(--white); */
+  padding: 10px 10px;
+  margin: 20px 0;
+  box-sizing: border-box;
+}
+
+
+.game-grid {
+  border: 3px solid var(--dbrown);
+  margin: 10px auto;
+  height: calc(var(--px) * 4);
+  width: calc(var(--px) * 4);
+  display: flex;
+  flex-wrap: wrap;
+  aspect-ratio: 1;
+  /* pointer-events: none; */
+}
+
+.single-grid {
+
+  height: var(--px);
+  width: var(--px);
+  box-sizing: border-box;
+  border: 3px solid var(--dbrown);
+  user-select: none;
+  /* pointer-events: none; */
+}
+
+
+
+#drag-box {
+  display: flex;
+  flex-wrap: wrap;
+  min-height: 10vh;
+  width: 100%;
+  gap: 10px;
+  padding: 10px;
+}
+
+.drag {
+
+  pointer-events: auto;
+
+  box-sizing: border-box;
+  border: 3px solid var(--dbrown);
+  display: flex;
+  justify-content: space-between;
+
+  background-color: var(--lbrown);
+  user-select: none;
+
+}
+
+.d12 {
+  flex-flow: row;
+  height: calc(var(--px) - 6px);
+  width: calc(2 * var(--px) - 6px);
+}
+
+.d21 {
+  flex-flow: column;
+  height: calc(2 * var(--px) - 6px);
+  width: calc(var(--px) - 6px);
+}
+
+.d13 {
+  flex-flow: row;
+  height: calc(var(--px) - 6px);
+  width: calc(3 * var(--px) - 6px);
+}
+
+.d31 {
+  flex-flow: column;
+  height: calc(3 * var(--px) - 6px);
+  width: calc(var(--px) - 6px);
+}
+
+.d11 {
+  flex-flow: column;
+  height: calc(var(--px) - 6px);
+  width: calc(var(--px) - 6px);
+}
+
+
+.drag-box-square {
+  box-sizing: border-box;
+  height: calc(var(--px) - 12px);
+  width: calc(var(--px) - 12px);
+  user-select: none;
+
+}
+
+.drag-box-square p {
+  font-size: 24px;
+  text-align: center;
+  margin: calc(50% - 12px - 2px) 0;
+  padding: 0;
+}
+
+.footer {
+  clear: both;
+}
+
+
+div[data-val='1'] {
+  background-color: var(--red);
+}
+
+div[data-val='2'] {
+  background-color: var(--orange);
+}
+
+div[data-val='3'] {
+  background-color: var(--yellow);
+}
+
+div[data-val='4'] {
+  background-color: var(--green);
+}
+
+div[data-val='5'] {
+  background-color: var(--lblue);
+}
+
+div[data-val='6'] {
+  background-color: var(--blue);
+}
+
+div[data-val='7'] {
+  background-color: var(--purple);
+}
+/*
+div[data-val='8'] {
+  background-color: var(--8);
+}
+
+div[data-val='9'] {
+  background-color: var(--9);
+}
+
+div[data-val='0'] {
+  background-color: var(--0);
+} */
+
+
+
+/* confetti! https://discourse.webflow.com/t/add-falling-confetti-with-css/103687 */
+
+
+#confetti-container {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  overflow: hidden;
+  /* margin: 0; */
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.confetti {
+ width: 15px;
+ height: 15px;
+ background-color: #f2d74e;
+ position: absolute;
+ left: 50%;
+ animation: confetti 5s ease-in-out -2s infinite;
+ transform-origin: left top;
+ overflow: hidden;
+}
+.confetti:nth-child(1) {
+ background-color: #f2d74e; left: 10%; animation-delay: 0;
+}
+.confetti:nth-child(2) {
+ background-color: #95c3de; left: 20%; animation-delay: -5s;
+}
+.confetti:nth-child(3) {
+ background-color: #ff9a91; left: 30%; animation-delay: -3s;
+}
+.confetti:nth-child(4) {
+ background-color: #f2d74e; left: 40%; animation-delay: -2.5s;
+}
+.confetti:nth-child(5) {
+ background-color: #95c3de; left: 50%; animation-delay: -4s;
+}
+.confetti:nth-child(6) {
+ background-color: #ff9a91; left: 60%; animation-delay: -6s;
+}
+.confetti:nth-child(7) {
+ background-color: #f2d74e; left: 70%; animation-delay: -1.5s;
+}
+.confetti:nth-child(8) {
+ background-color: #95c3de; left: 80%; animation-delay: -2s;
+}
+.confetti:nth-child(9) {
+ background-color: #ff9a91; left: 90%; animation-delay: -3.5s;
+}
+.confetti:nth-child(10) {
+ background-color: #f2d74e; left: 100%; animation-delay: -2.5s;
+}
+
+@keyframes confetti {
+ 0% { transform: rotateZ(15deg) rotateY(0deg) translate(0,0); }
+ 25% { transform: rotateZ(5deg) rotateY(360deg) translate(-5vw,20vh); }
+ 50% { transform: rotateZ(15deg) rotateY(720deg) translate(5vw,60vh); }
+ 75% { transform: rotateZ(5deg) rotateY(1080deg) translate(-10vw,80vh); }
+ 100% { transform: rotateZ(15deg) rotateY(1440deg) translate(10vw,110vh); }
+}
