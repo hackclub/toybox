@@ -387,6 +387,13 @@ footer {
 #game-cover button {
   pointer-events: auto;
   z-index: 2000;
+  background-color: var(--dbrown);
+  color: var(--lbrown);
+  border: none;
+  padding: 25px;
+  border-radius: 25px;
+  font-family: inherit;
+  font-size: inherit;
 }
 
 .box {
@@ -611,6 +618,7 @@ div[data-val='0'] {
   /* margin: 0; */
   box-sizing: border-box;
   pointer-events: none;
+  z-index: 3000;
 }
 .confetti {
  width: 15px;

@@ -836,7 +836,7 @@ function endGame() {
   var puzzleDate = getPuzzleDateString().toLowerCase();
   var puzzleNum = getPuzzleNumber();
   if (dragbox) {
-    dragbox.innerHTML = '<div style="padding:2em;text-align:center;">Toybox #' + puzzleNum + '<br>' + puzzleDate + '<br>Time: <span id="final-time" style="font-weight:bold;">' + timeStr + '</span><br><button id="copy-time-btn" style="margin-top:1em;font-size:1em;padding:0.5em 1.5em;">Copy time</button></div>';
+    dragbox.innerHTML = '<div style="padding:2em;text-align:center;">toybox #' + puzzleNum + '<br>' + puzzleDate + '<br>🕓 <span id="final-time" style="font-weight:bold;">' + timeStr + '</span><br><button id="copy-time-btn" style="margin-top:1em;font-size:1em;padding:0.5em 1.5em;">Copy time</button></div>';
     var copyBtn = document.getElementById('copy-time-btn');
     if (copyBtn) {
       copyBtn.onclick = function() {
