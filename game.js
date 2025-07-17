@@ -54,7 +54,7 @@ var rangen = [
   [4, 0, 2, 7],
 ]
 
-var choices = [[1, 3], [1, 3], [3, 1], [3, 1], [1, 3], [3, 1], [1, 2], [2, 1]];
+var choices = [[1, 3], [1, 3], [3, 1], [3, 1],[1, 2], [2, 1]];
 var nums = [1, 2, 3, 4, 5, 6, 7];
 
 
@@ -134,7 +134,7 @@ dragbox.addEventListener("mouseenter", mouseenter, false);
 var gamegrid = document.getElementById("game-grid");
 
 var boxarray = document.getElementsByClassName("drag");
-var titletext = document.getElementById("title");
+// var titletext = document.getElementById("title");
 
 document.addEventListener("mousedown", setpiece);
 document.addEventListener("mouseup", setpiece);
@@ -195,7 +195,15 @@ for (var i = 0; i < count; i++){
     var box = document.createElement("div");
     box.classList.add("drag-box-square");
     box.dataset.val = pieces[i].values[j];
-    box.innerHTML = "<p>" + pieces[i].values[j] + "</p>";
+    // Replace number with image
+    var img = document.createElement('img');
+    img.src = 'assets/toyboxgame/' + pieces[i].values[j] + '.png';
+    img.alt = pieces[i].values[j];
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'contain';
+    box.appendChild(img);
+    // box.innerHTML = "<p>" + pieces[i].values[j] + "</p>";
     piece.appendChild(box);
   }
 
@@ -205,22 +213,113 @@ for (var i = 0; i < count; i++){
 
 
 
-// --- DRAG AND DROP IMPROVEMENT START ---
-// Variables for drag
+// --- Game Cover, Timer, and End State ---
+var gameStarted = false;
+var gameEnded = false;
+var timerInterval = null;
+var timerStart = null;
+var timerPausedAt = 0;
+var timerPaused = false;
+var timerElem = null;
+
+function formatTime(ms) {
+  var totalSec = Math.floor(ms / 1000);
+  var min = Math.floor(totalSec / 60);
+  var sec = totalSec % 60;
+  return (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function updateTimerDisplay() {
+  if (!timerElem) timerElem = document.getElementById('timer');
+  if (!timerElem) return;
+  var elapsed = timerPaused ? timerPausedAt : (Date.now() - timerStart + timerPausedAt);
+  timerElem.textContent = formatTime(elapsed);
+}
+
+function startTimer() {
+  timerStart = Date.now();
+  timerPausedAt = 0;
+  timerPaused = false;
+  timerElem = document.getElementById('timer');
+  timerElem.style.display = '';
+  timerInterval = setInterval(updateTimerDisplay, 200);
+}
+
+function pauseTimer() {
+  if (!timerPaused) {
+    timerPausedAt = Date.now() - timerStart + timerPausedAt;
+    timerPaused = true;
+    clearInterval(timerInterval);
+  }
+}
+
+function resumeTimer() {
+  if (timerPaused) {
+    timerStart = Date.now();
+    timerPaused = false;
+    timerInterval = setInterval(updateTimerDisplay, 200);
+  }
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  updateTimerDisplay();
+}
+
+window.addEventListener('blur', pauseTimer);
+window.addEventListener('focus', function() { if (gameStarted && !gameEnded) resumeTimer(); });
+
+document.addEventListener('DOMContentLoaded', function() {
+  var cover = document.getElementById('game-cover');
+  var startBtn = document.getElementById('start-game-btn');
+  timerElem = document.getElementById('timer');
+  if (cover && startBtn) {
+    cover.style.display = 'flex';
+    startBtn.onclick = function() {
+      cover.style.display = 'none';
+      gameStarted = true;
+      gameEnded = false;
+      startTimer();
+    };
+  }
+});
+
+// --- Drag and Drop State ---
 var dragOffsetX = 0;
 var dragOffsetY = 0;
 var origParent = null;
 var origNextSibling = null;
+var origGridCellId = null;
+var origCol = null;
+var origRow = null;
+var lastBoardCol = null;
+var lastBoardRow = null;
+var lastBoardHeight = null;
+var lastBoardWidth = null;
 var dragging = false;
-// New: which sub-square of the piece was grabbed
 var grabbedSubRow = 0;
 var grabbedSubCol = 0;
 
+// --- Drag and Drop Logic ---
 function onMouseMove(e) {
   if (!dragging || !curpiece) return;
   curpiece.style.left = (e.pageX - dragOffsetX) + 'px';
   curpiece.style.top = (e.pageY - dragOffsetY) + 'px';
 }
+
+// Patch setpiece to disallow interaction until game starts and after win
+var origSetpiece = setpiece;
+setpiece = function(e) {
+  if (!gameStarted) return;
+  if (gameEnded && e.type === 'mouseup') {
+    // Disallow dropping in dragbox after win
+    var dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+    if (dropTarget && (dropTarget.id === 'drag-box' || (dropTarget.closest && dropTarget.closest('#drag-box')))) {
+      return;
+    }
+  }
+  return origSetpiece.apply(this, arguments);
+};
 
 function setpiece(e) {
   if (e.type == 'mousedown') {
@@ -245,35 +344,43 @@ function setpiece(e) {
     dragging = true;
     origParent = curpiece.parentNode;
     origNextSibling = curpiece.nextSibling;
+    origGridCellId = null;
+    origCol = null;
+    origRow = null;
+    lastBoardCol = null;
+    lastBoardRow = null;
+    lastBoardHeight = null;
+    lastBoardWidth = null;
+    if (curpiece.parentElement && curpiece.parentElement.classList.contains('single-grid')) {
+      origGridCellId = curpiece.parentElement.id;
+      origCol = parseInt(curpiece.parentElement.id.substring(1, 2));
+      origRow = parseInt(curpiece.parentElement.id.substring(2, 3));
+      // Track last position and size for robust clearing
+      lastBoardCol = origCol;
+      lastBoardRow = origRow;
+      lastBoardHeight = parseInt(curpiece.id.substring(2, 3));
+      lastBoardWidth = parseInt(curpiece.id.substring(3, 4));
+    }
     var rect = curpiece.getBoundingClientRect();
     dragOffsetX = e.pageX - rect.left - window.scrollX;
     dragOffsetY = e.pageY - rect.top - window.scrollY;
-    // New: clear previous board cells if piece is on the grid
-    if (curpiece.parentElement && curpiece.parentElement.classList.contains('single-grid')) {
-      var pheight = parseInt(curpiece.id.substring(2, 3));
-      var pwidth = parseInt(curpiece.id.substring(3, 4));
-      // Find the grid cell this piece is in
-      var parentId = curpiece.parentElement.id;
-      var col = parseInt(parentId.substring(1, 2));
-      var row = parseInt(parentId.substring(2, 3));
-      for (var i = 0; i < pheight; i++) {
-        for (var j = 0; j < pwidth; j++) {
-          if (col + i >= 0 && col + i < 4 && row + j >= 0 && row + j < 4) {
-            board[col + i][row + j] = null;
+    // Clear previous board cells if piece is on the grid
+    if (lastBoardCol !== null && lastBoardRow !== null) {
+      for (var i = 0; i < lastBoardHeight; i++) {
+        for (var j = 0; j < lastBoardWidth; j++) {
+          if (lastBoardCol + i >= 0 && lastBoardCol + i < 4 && lastBoardRow + j >= 0 && lastBoardRow + j < 4) {
+            board[lastBoardCol + i][lastBoardRow + j] = null;
           }
         }
       }
     }
-    // New: figure out which sub-square was clicked
-    var subRect = null;
+    // Figure out which sub-square was clicked
     var subBoxes = Array.from(curpiece.getElementsByClassName('drag-box-square'));
     grabbedSubRow = 0;
     grabbedSubCol = 0;
     for (var i = 0; i < subBoxes.length; i++) {
       var r = subBoxes[i].getBoundingClientRect();
       if (e.pageX >= r.left + window.scrollX && e.pageX <= r.right + window.scrollX && e.pageY >= r.top + window.scrollY && e.pageY <= r.bottom + window.scrollY) {
-        subRect = r;
-        // Figure out row/col in the piece
         var pheight = parseInt(curpiece.id.substring(2, 3));
         var pwidth = parseInt(curpiece.id.substring(3, 4));
         if (pheight === 1) {
@@ -283,7 +390,6 @@ function setpiece(e) {
           grabbedSubRow = i;
           grabbedSubCol = 0;
         } else {
-          // For 2x2 or larger, assume row-major order
           grabbedSubRow = Math.floor(i / pwidth);
           grabbedSubCol = i % pwidth;
         }
@@ -292,7 +398,7 @@ function setpiece(e) {
     }
     curpiece.style.position = 'absolute';
     curpiece.style.zIndex = 1000;
-    curpiece.style.pointerEvents = 'none'; // Always set to none while dragging
+    curpiece.style.pointerEvents = 'auto';
     curpiece.style.left = (e.pageX - dragOffsetX) + 'px';
     curpiece.style.top = (e.pageY - dragOffsetY) + 'px';
     document.body.appendChild(curpiece);
@@ -308,23 +414,26 @@ function setpiece(e) {
     document.removeEventListener('mousemove', onMouseMove);
     dragging = false;
     selected = false;
-    // --- Always set pointer-events: none before elementFromPoint ---
-    curpiece.style.pointerEvents = 'none';
-    curpiece.style.visibility = 'hidden';
+    if (curpiece) {
+      curpiece.style.pointerEvents = 'none';
+      curpiece.style.visibility = 'hidden';
+    }
     var dropTarget = document.elementFromPoint(e.clientX, e.clientY);
-    curpiece.style.visibility = 'visible';
-    // --- Restore pointer-events after drop logic ---
-    curpiece.style.pointerEvents = 'auto';
+    if (dropTarget && dropTarget.classList && dropTarget.classList.contains('ghost-img')) {
+      dropTarget = dropTarget.parentElement;
+    }
+    if (curpiece) {
+      curpiece.style.visibility = 'visible';
+      curpiece.style.pointerEvents = 'auto';
+    }
     var gridCell = dropTarget && dropTarget.classList && dropTarget.classList.contains('single-grid') ? dropTarget : null;
-    var inSidebar = dropTarget && (dropTarget.id === 'drag-box' || dropTarget.closest && dropTarget.closest('#drag-box'));
+    var inSidebar = dropTarget && (dropTarget.id === 'drag-box' || (dropTarget.closest && dropTarget.closest('#drag-box')));
     var placed = false;
     if (gridCell) {
-      // Try to place the piece in the grid, offset by grabbed sub-square
       var col = parseInt(gridCell.id.substring(1, 2));
       var row = parseInt(gridCell.id.substring(2, 3));
       var pheight = parseInt(curpiece.id.substring(2, 3));
       var pwidth = parseInt(curpiece.id.substring(3, 4));
-      // Offset so the grabbed sub-square lands under the cursor
       var topLeftCol = col - grabbedSubRow;
       var topLeftRow = row - grabbedSubCol;
       var canplace = true;
@@ -336,7 +445,6 @@ function setpiece(e) {
         }
       }
       if (canplace) {
-        // Snap to grid cell
         var gridId = 's' + topLeftCol + topLeftRow;
         var snapCell = document.getElementById(gridId);
         if (snapCell) {
@@ -347,18 +455,14 @@ function setpiece(e) {
           curpiece.style.top = '';
           curpiece.style.visibility = '';
           placed = true;
-          // Update board state
           for (var i = 0; i < pheight; i++) {
             for (var j = 0; j < pwidth; j++) {
               board[topLeftCol + i][topLeftRow + j] = curpiece.id.substring(4 + i + j, 5 + i + j);
             }
           }
-          // Show error crosses if needed
           updatePieceErrors(curpiece, topLeftCol, topLeftRow);
-          // Update all other pieces on the board for errors
           var allGridPieces = document.querySelectorAll('.single-grid > .drag');
           allGridPieces.forEach(function(piece) {
-            // Skip the just-placed piece (already updated)
             if (piece === curpiece) return;
             var parentId = piece.parentElement.id;
             var col = parseInt(parentId.substring(1, 2));
@@ -368,7 +472,6 @@ function setpiece(e) {
         }
       }
     }
-    // --- Allow dropping back to sidebar ---
     if (!placed && inSidebar) {
       dragbox.appendChild(curpiece);
       curpiece.style.position = '';
@@ -376,17 +479,16 @@ function setpiece(e) {
       curpiece.style.left = '';
       curpiece.style.top = '';
       curpiece.style.visibility = '';
-      // Remove from board state if it was on the grid
-      var pheight = parseInt(curpiece.id.substring(2, 3));
-      var pwidth = parseInt(curpiece.id.substring(3, 4));
-      for (var i = 0; i < 4; i++) {
-        for (var j = 0; j < 4; j++) {
-          if (board[i][j] && curpiece.id.includes(board[i][j])) {
-            board[i][j] = null;
+      // Remove from board state if it was on the grid (robust)
+      if (lastBoardCol !== null && lastBoardRow !== null) {
+        for (var i = 0; i < lastBoardHeight; i++) {
+          for (var j = 0; j < lastBoardWidth; j++) {
+            if (lastBoardCol + i >= 0 && lastBoardCol + i < 4 && lastBoardRow + j >= 0 && lastBoardRow + j < 4) {
+              board[lastBoardCol + i][lastBoardRow + j] = null;
+            }
           }
         }
       }
-      // Remove all crosses from this piece
       var squares = curpiece.querySelectorAll('.drag-box-square');
       squares.forEach(function(sq) {
         var cross = sq.querySelector('.red-cross');
@@ -395,43 +497,73 @@ function setpiece(e) {
       placed = true;
     }
     if (!placed) {
-      // Return to drag area
-      if (origNextSibling && origNextSibling.parentNode === origParent) {
+      if (origGridCellId) {
+        var origCell = document.getElementById(origGridCellId);
+        if (origCell) origCell.appendChild(curpiece);
+        curpiece.style.position = '';
+        curpiece.style.zIndex = '';
+        curpiece.style.left = '';
+        curpiece.style.top = '';
+        curpiece.style.visibility = '';
+        var pheight = parseInt(curpiece.id.substring(2, 3));
+        var pwidth = parseInt(curpiece.id.substring(3, 4));
+        for (var i = 0; i < pheight; i++) {
+          for (var j = 0; j < pwidth; j++) {
+            if (origCol !== null && origRow !== null && origCol + i >= 0 && origCol + i < 4 && origRow + j >= 0 && origRow + j < 4) {
+              board[origCol + i][origRow + j] = curpiece.id.substring(4 + i + j, 5 + i + j);
+            }
+          }
+        }
+      } else if (origNextSibling && origNextSibling.parentNode === origParent) {
         origParent.insertBefore(curpiece, origNextSibling);
+        curpiece.style.position = '';
+        curpiece.style.zIndex = '';
+        curpiece.style.left = '';
+        curpiece.style.top = '';
+        curpiece.style.visibility = '';
       } else {
         origParent.appendChild(curpiece);
+        curpiece.style.position = '';
+        curpiece.style.zIndex = '';
+        curpiece.style.left = '';
+        curpiece.style.top = '';
+        curpiece.style.visibility = '';
       }
-      curpiece.style.position = '';
-      curpiece.style.zIndex = '';
-      curpiece.style.left = '';
-      curpiece.style.top = '';
-      curpiece.style.visibility = '';
-      // Remove all crosses from this piece
       var squares = curpiece.querySelectorAll('.drag-box-square');
       squares.forEach(function(sq) {
         var cross = sq.querySelector('.red-cross');
         if (cross) cross.remove();
       });
     }
+    // After every move, update error overlays for all pieces on the board
+    var allGridPieces = document.querySelectorAll('.single-grid > .drag');
+    allGridPieces.forEach(function(piece) {
+      var parentId = piece.parentElement.id;
+      var col = parseInt(parentId.substring(1, 2));
+      var row = parseInt(parentId.substring(2, 3));
+      updatePieceErrors(piece, col, row);
+    });
+    updateGhostImages();
     curpiece = null;
+    origGridCellId = null;
+    origCol = null;
+    origRow = null;
+    lastBoardCol = null;
+    lastBoardRow = null;
+    lastBoardHeight = null;
+    lastBoardWidth = null;
     // Check win condition
-    var win = true;
+    var isWin = true;
     for (var i = 0; i < 4; i++) {
       for (var j = 0; j < 4; j++) {
-        if (board[i][j] == null) {
-          win = false;
-        }
-        if (board[i][j] != board[j][i]) {
-          win = false;
-        }
+        if (board[i][j] == null) isWin = false;
+        if (board[i][j] != board[j][i]) isWin = false;
       }
     }
-    if (win) {
-      titletext.innerHTML = "you win!!!!! 🎉🎉";
-      document.getElementById("confetti-container").innerHTML = '<div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>';
-    }
+    if (isWin) endGame();
   }
 }
+
 // --- DRAG AND DROP IMPROVEMENT END ---
 
 
@@ -552,8 +684,9 @@ function clearBoard() {
       board[i][j] = null;
     }
   }
-  titletext.innerHTML = '';
+  // titletext.innerHTML = '';
   document.getElementById('confetti-container').innerHTML = '';
+  updateGhostImages();
 }
 
 // Helper: add or remove red cross overlays on a piece
@@ -601,4 +734,40 @@ function updatePieceErrors(piece, topLeftCol, topLeftRow) {
       }
     }
   }
+}
+
+function updateGhostImages() {
+  // Remove all existing ghost images
+  var ghosts = document.querySelectorAll('.ghost-img');
+  ghosts.forEach(function(g) { g.remove(); });
+
+  // For every filled cell, if its mirror is empty, add a ghost image
+  for (var i = 0; i < 4; i++) {
+    for (var j = 0; j < 4; j++) {
+      if (board[i][j] != null && board[j][i] == null) {
+        var gridId = 's' + j + i;
+        var cell = document.getElementById(gridId);
+        if (cell && !cell.querySelector('.ghost-img')) {
+          var img = document.createElement('img');
+          img.src = 'assets/toyboxgame/' + board[i][j] + '.png';
+          img.className = 'ghost-img';
+          cell.style.position = 'relative';
+          cell.appendChild(img);
+        }
+      }
+    }
+  }
+}
+
+// --- End Game Logic ---
+function endGame() {
+  if (gameEnded) return;
+  gameEnded = true;
+  stopTimer();
+  // Replace drag box with time
+  var dragbox = document.getElementById('drag-box');
+  if (dragbox) {
+    dragbox.innerHTML = '<div style="font-size:2em;padding:2em;text-align:center;">Time: <span style="font-weight:bold;">' + (timerElem ? timerElem.textContent : '') + '</span></div>';
+  }
+  document.getElementById("confetti-container").innerHTML = '<div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>';
 }

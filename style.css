@@ -140,7 +140,6 @@ section#sample .interactive  {
   background-color: var(--lbrown);
   border-radius: 25px;
   width: 100%;
-  aspect-ratio: 1.4;
 
 }
 
@@ -341,12 +340,51 @@ footer {
 }
 
 
+#game summary {
+  text-align: center;
+  width: 100%;
+
+}
 
 
 
+#clear-button {
+  width: var(--px);
+  height: calc(var(--px) * 0.8);
+  background-color: var(--dbrown);
+  color: white;
+  border: none;
+  font-family: inherit;
+  border-radius: 4px;
+}
+
+#clear-button:hover {
+  background-color: var(--yellow);
+}
 .game-box {
   display: flex;
   flex-flow: row;
+  position: relative;
+}
+
+#game-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--yellow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+#game-cover button {
+  pointer-events: auto;
+  z-index: 2000;
 }
 
 .box {
@@ -391,18 +429,70 @@ footer {
 }
 
 .drag {
-
   pointer-events: auto;
-
   box-sizing: border-box;
   /* border: 3px solid var(--dbrown); */
   display: flex;
   justify-content: space-between;
-
-  background-color: var(--dbrown);
+  /* background-color: var(--dbrown); */
   user-select: none;
   box-sizing: border-box;
   border-radius: 8px;
+}
+
+.ghost-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Connector for horizontal pieces (row flex) */
+.drag[style*='flex-flow: row'],
+.d12, .d13 {
+  /* fallback for class-based detection */
+}
+.d12 .drag-box-square:not(:last-child),
+.d13 .drag-box-square:not(:last-child) {
+  position: relative;
+}
+.d12 .drag-box-square:not(:last-child)::after,
+.d13 .drag-box-square:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -6px;
+  width: 12px;
+  height: 36px;
+  background: var(--dbrown);
+  /* border-radius: 4px; */
+  transform: translate(25%, -50%);
+  z-index: 1;
+}
+
+/* Connector for vertical pieces (column flex) */
+.d21 .drag-box-square:not(:last-child),
+.d31 .drag-box-square:not(:last-child),
+.d11 .drag-box-square:not(:last-child) {
+  position: relative;
+}
+.d21 .drag-box-square:not(:last-child)::after,
+.d31 .drag-box-square:not(:last-child)::after,
+.d11 .drag-box-square:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 36px;
+  height: 12px;
+  background: var(--dbrown);
+  /* border-radius: 4px; */
+  transform: translate(-50%, 45%);
+  z-index: 1;
 }
 
 .d12 {
@@ -441,10 +531,9 @@ footer {
   height: calc(var(--px) - 6px);
   width: calc(var(--px) - 6px);
   user-select: none;
-
-  border: 8px solid white;
-  border-radius: 8px;
-  background-color: var(--lbrown);
+  /* border: 8px solid white; */
+  /* border-radius: 8px; */
+  /* background-color: var(--lbrown); */
   position: relative;
   pointer-events: none; /* Prevent blocking drag events */
 }
@@ -513,8 +602,10 @@ div[data-val='0'] {
 #confetti-container {
   width: 100vw;
   height: 100vh;
-  position: absolute;
+  position: fixed;
   overflow: hidden;
+  left: 0;
+  top: 0;
   /* margin: 0; */
   box-sizing: border-box;
   pointer-events: none;
@@ -530,34 +621,34 @@ div[data-val='0'] {
  overflow: hidden;
 }
 .confetti:nth-child(1) {
- background-color: #f2d74e; left: 10%; animation-delay: 0;
+ background-color: var(--red); left: 10%; animation-delay: 0;
 }
 .confetti:nth-child(2) {
- background-color: #95c3de; left: 20%; animation-delay: -5s;
+ background-color: var(--yellow); left: 20%; animation-delay: -5s;
 }
 .confetti:nth-child(3) {
- background-color: #ff9a91; left: 30%; animation-delay: -3s;
+ background-color: var(--lblue); left: 30%; animation-delay: -3s;
 }
 .confetti:nth-child(4) {
  background-color: #f2d74e; left: 40%; animation-delay: -2.5s;
 }
 .confetti:nth-child(5) {
- background-color: #95c3de; left: 50%; animation-delay: -4s;
+ background-color: var(--red); left: 50%; animation-delay: -4s;
 }
 .confetti:nth-child(6) {
- background-color: #ff9a91; left: 60%; animation-delay: -6s;
+ background-color: var(--yellow); left: 60%; animation-delay: -6s;
 }
 .confetti:nth-child(7) {
- background-color: #f2d74e; left: 70%; animation-delay: -1.5s;
+ background-color: var(--lblue); left: 70%; animation-delay: -1.5s;
 }
 .confetti:nth-child(8) {
- background-color: #95c3de; left: 80%; animation-delay: -2s;
+ background-color: var(--red); left: 80%; animation-delay: -2s;
 }
 .confetti:nth-child(9) {
- background-color: #ff9a91; left: 90%; animation-delay: -3.5s;
+ background-color: var(--yellow); left: 90%; animation-delay: -3.5s;
 }
 .confetti:nth-child(10) {
- background-color: #f2d74e; left: 100%; animation-delay: -2.5s;
+ background-color: var(--lblue); left: 100%; animation-delay: -2.5s;
 }
 
 @keyframes confetti {
@@ -621,4 +712,18 @@ div[data-val='0'] {
   pointer-events: none;
   color: red;
 
+}
+
+
+#game-grid::after {
+  content: "";
+  position: relative;
+  width: 4px;
+  height: 140%;
+  background: repeating-linear-gradient(45deg, var(--yellow), var(--yellow) 16px, transparent 16px, transparent 32px);
+  transform: rotate(-45deg);
+  left: 50%;
+  top: -120%;
+  opacity: 0.5;
+  pointer-events: none;
 }
