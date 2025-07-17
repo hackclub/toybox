@@ -225,6 +225,20 @@ function onMouseMove(e) {
 function setpiece(e) {
   if (e.type == 'mousedown') {
     var target = e.target.closest('.drag');
+    // Robust: if not found, check all .drag pieces on the board for bounding box hit
+    if (!target) {
+      var allPieces = document.querySelectorAll('.drag');
+      for (var i = 0; i < allPieces.length; i++) {
+        var rect = allPieces[i].getBoundingClientRect();
+        if (
+          e.clientX >= rect.left && e.clientX <= rect.right &&
+          e.clientY >= rect.top && e.clientY <= rect.bottom
+        ) {
+          target = allPieces[i];
+          break;
+        }
+      }
+    }
     if (!target) return;
     selected = true;
     curpiece = target;
@@ -234,6 +248,22 @@ function setpiece(e) {
     var rect = curpiece.getBoundingClientRect();
     dragOffsetX = e.pageX - rect.left - window.scrollX;
     dragOffsetY = e.pageY - rect.top - window.scrollY;
+    // New: clear previous board cells if piece is on the grid
+    if (curpiece.parentElement && curpiece.parentElement.classList.contains('single-grid')) {
+      var pheight = parseInt(curpiece.id.substring(2, 3));
+      var pwidth = parseInt(curpiece.id.substring(3, 4));
+      // Find the grid cell this piece is in
+      var parentId = curpiece.parentElement.id;
+      var col = parseInt(parentId.substring(1, 2));
+      var row = parseInt(parentId.substring(2, 3));
+      for (var i = 0; i < pheight; i++) {
+        for (var j = 0; j < pwidth; j++) {
+          if (col + i >= 0 && col + i < 4 && row + j >= 0 && row + j < 4) {
+            board[col + i][row + j] = null;
+          }
+        }
+      }
+    }
     // New: figure out which sub-square was clicked
     var subRect = null;
     var subBoxes = Array.from(curpiece.getElementsByClassName('drag-box-square'));
@@ -262,20 +292,29 @@ function setpiece(e) {
     }
     curpiece.style.position = 'absolute';
     curpiece.style.zIndex = 1000;
-    curpiece.style.pointerEvents = 'none';
+    curpiece.style.pointerEvents = 'none'; // Always set to none while dragging
     curpiece.style.left = (e.pageX - dragOffsetX) + 'px';
     curpiece.style.top = (e.pageY - dragOffsetY) + 'px';
     document.body.appendChild(curpiece);
     document.addEventListener('mousemove', onMouseMove);
+    // Remove all crosses from this piece (in case it's being moved)
+    var squares = curpiece.querySelectorAll('.drag-box-square');
+    squares.forEach(function(sq) {
+      var cross = sq.querySelector('.red-cross');
+      if (cross) cross.remove();
+    });
   } else if (e.type == 'mouseup') {
     if (!dragging || !curpiece) return;
     document.removeEventListener('mousemove', onMouseMove);
     dragging = false;
     selected = false;
-    curpiece.style.pointerEvents = 'auto';
+    // --- Always set pointer-events: none before elementFromPoint ---
+    curpiece.style.pointerEvents = 'none';
     curpiece.style.visibility = 'hidden';
     var dropTarget = document.elementFromPoint(e.clientX, e.clientY);
     curpiece.style.visibility = 'visible';
+    // --- Restore pointer-events after drop logic ---
+    curpiece.style.pointerEvents = 'auto';
     var gridCell = dropTarget && dropTarget.classList && dropTarget.classList.contains('single-grid') ? dropTarget : null;
     var inSidebar = dropTarget && (dropTarget.id === 'drag-box' || dropTarget.closest && dropTarget.closest('#drag-box'));
     var placed = false;
@@ -314,6 +353,18 @@ function setpiece(e) {
               board[topLeftCol + i][topLeftRow + j] = curpiece.id.substring(4 + i + j, 5 + i + j);
             }
           }
+          // Show error crosses if needed
+          updatePieceErrors(curpiece, topLeftCol, topLeftRow);
+          // Update all other pieces on the board for errors
+          var allGridPieces = document.querySelectorAll('.single-grid > .drag');
+          allGridPieces.forEach(function(piece) {
+            // Skip the just-placed piece (already updated)
+            if (piece === curpiece) return;
+            var parentId = piece.parentElement.id;
+            var col = parseInt(parentId.substring(1, 2));
+            var row = parseInt(parentId.substring(2, 3));
+            updatePieceErrors(piece, col, row);
+          });
         }
       }
     }
@@ -335,6 +386,12 @@ function setpiece(e) {
           }
         }
       }
+      // Remove all crosses from this piece
+      var squares = curpiece.querySelectorAll('.drag-box-square');
+      squares.forEach(function(sq) {
+        var cross = sq.querySelector('.red-cross');
+        if (cross) cross.remove();
+      });
       placed = true;
     }
     if (!placed) {
@@ -349,6 +406,12 @@ function setpiece(e) {
       curpiece.style.left = '';
       curpiece.style.top = '';
       curpiece.style.visibility = '';
+      // Remove all crosses from this piece
+      var squares = curpiece.querySelectorAll('.drag-box-square');
+      squares.forEach(function(sq) {
+        var cross = sq.querySelector('.red-cross');
+        if (cross) cross.remove();
+      });
     }
     curpiece = null;
     // Check win condition
@@ -431,20 +494,43 @@ function toggleq(){
 
 // --- Add Clear Board Button ---
 // Add the button to the DOM after the grid is created
-var clearBtn = document.createElement('button');
-clearBtn.textContent = 'Clear Board';
-clearBtn.style.margin = '10px 0';
-clearBtn.style.fontSize = '1.2em';
-clearBtn.style.padding = '8px 20px';
-clearBtn.style.borderRadius = '8px';
-clearBtn.style.background = '#9A754E';
-clearBtn.style.color = '#fff';
-clearBtn.style.border = 'none';
-clearBtn.style.cursor = 'pointer';
-gamegrid.parentElement.insertBefore(clearBtn, gamegrid.nextSibling);
+// var clearBtn = document.createElement('button');
+// clearBtn.textContent = 'Clear Board';
+// clearBtn.style.margin = '10px 0';
+// clearBtn.style.fontSize = '1.2em';
+// clearBtn.style.padding = '8px 20px';
+// clearBtn.style.borderRadius = '8px';
+// clearBtn.style.background = '#9A754E';
+// clearBtn.style.color = '#fff';
+// clearBtn.style.border = 'none';
+// clearBtn.style.cursor = 'pointer';
+// gamegrid.parentElement.insertBefore(clearBtn, gamegrid.nextSibling);
+//
+// clearBtn.addEventListener('click', function() {
+//   // Move all pieces from grid to drag-box
+//   var allPieces = document.querySelectorAll('.drag');
+//   allPieces.forEach(function(piece) {
+//     dragbox.appendChild(piece);
+//     piece.style.position = '';
+//     piece.style.zIndex = '';
+//     piece.style.left = '';
+//     piece.style.top = '';
+//     piece.style.visibility = '';
+//   });
+//   // Clear board state
+//   for (var i = 0; i < 4; i++) {
+//     for (var j = 0; j < 4; j++) {
+//       board[i][j] = null;
+//     }
+//   }
+//   // Optionally reset win message
+//   titletext.innerHTML = '';
+//   document.getElementById('confetti-container').innerHTML = '';
+// });
+// --- End Clear Board Button ---
 
-clearBtn.addEventListener('click', function() {
-  // Move all pieces from grid to drag-box
+
+function clearBoard() {
   var allPieces = document.querySelectorAll('.drag');
   allPieces.forEach(function(piece) {
     dragbox.appendChild(piece);
@@ -453,6 +539,12 @@ clearBtn.addEventListener('click', function() {
     piece.style.left = '';
     piece.style.top = '';
     piece.style.visibility = '';
+    // Remove all crosses
+    var squares = piece.querySelectorAll('.drag-box-square');
+    squares.forEach(function(sq) {
+      var cross = sq.querySelector('.red-cross');
+      if (cross) cross.remove();
+    });
   });
   // Clear board state
   for (var i = 0; i < 4; i++) {
@@ -460,8 +552,53 @@ clearBtn.addEventListener('click', function() {
       board[i][j] = null;
     }
   }
-  // Optionally reset win message
   titletext.innerHTML = '';
   document.getElementById('confetti-container').innerHTML = '';
-});
-// --- End Clear Board Button ---
+}
+
+// Helper: add or remove red cross overlays on a piece
+function updatePieceErrors(piece, topLeftCol, topLeftRow) {
+  // Remove all previous crosses
+  var squares = piece.querySelectorAll('.drag-box-square');
+  squares.forEach(function(sq) {
+    var cross = sq.querySelector('.red-cross');
+    if (cross) cross.remove();
+  });
+  // Only check if piece is on the grid
+  if (piece.parentElement && piece.parentElement.classList.contains('single-grid')) {
+    var pheight = parseInt(piece.id.substring(2, 3));
+    var pwidth = parseInt(piece.id.substring(3, 4));
+    // Determine flex direction
+    var flexDir = window.getComputedStyle(piece).flexDirection;
+    for (var i = 0; i < pheight; i++) {
+      for (var j = 0; j < pwidth; j++) {
+        var gridI = topLeftCol + i;
+        var gridJ = topLeftRow + j;
+        if (
+          gridI >= 0 && gridI < 4 && gridJ >= 0 && gridJ < 4 &&
+          board[gridI][gridJ] != null &&
+          board[gridJ][gridI] != null &&
+          board[gridI][gridJ] !== board[gridJ][gridI]
+        ) {
+          // Calculate correct index based on flex direction
+          var idx;
+          if (flexDir === 'row') {
+            idx = i * pwidth + j;
+          } else if (flexDir === 'column') {
+            idx = j * pheight + i;
+          } else {
+            idx = i * pwidth + j;
+          }
+          var sq = squares[idx];
+          if (sq && !sq.querySelector('.red-cross')) {
+            var cross = document.createElement('div');
+            cross.className = 'red-cross';
+            cross.textContent = '❌';
+            sq.style.position = 'relative';
+            sq.appendChild(cross);
+          }
+        }
+      }
+    }
+  }
+}

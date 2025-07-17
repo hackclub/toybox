@@ -445,7 +445,12 @@ footer {
   border: 8px solid white;
   border-radius: 8px;
   background-color: var(--lbrown);
+  position: relative;
+  pointer-events: none; /* Prevent blocking drag events */
+}
 
+.drag-box-square > * {
+  pointer-events: none;
 }
 
 .drag-box-square p {
@@ -601,4 +606,19 @@ div[data-val='0'] {
   .steps div, .steps > a {
     left: 0 !important;
   }
+}
+
+.red-cross {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  pointer-events: none;
+  color: red;
+
 }
