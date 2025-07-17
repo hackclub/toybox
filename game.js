@@ -121,11 +121,10 @@ var curpiece = null;
 
 // current state of board (keep track)
 var board = [
-  [null, null, null, null, null],
-  [null, null, null, null, null],
-  [null, null, null, null, null],
-  [null, null, null, null, null],
-  [null, null, null, null, null]
+  [null, null, null, null],
+  [null, null, null, null],
+  [null, null, null, null],
+  [null, null, null, null]
 ]
 
 
