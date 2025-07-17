@@ -381,7 +381,14 @@ footer {
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  pointer-events: none;
+  pointer-events: auto;
+}
+
+/* Disable game interactions when cover is visible */
+.game-box.game-covered .drag,
+.game-box.game-covered .single-grid,
+.game-box.game-covered #drag-box {
+  pointer-events: none !important;
 }
 
 #game-cover button {

@@ -307,6 +307,7 @@ window.addEventListener('focus', function() { if (gameStarted && !gameEnded) res
 document.addEventListener('DOMContentLoaded', function() {
   var cover = document.getElementById('game-cover');
   var startBtn = document.getElementById('start-game-btn');
+  var gameBox = document.querySelector('.game-box');
   timerElem = document.getElementById('timer');
   // Set puzzle number and date in the UI
   var puzzleNumElem = document.getElementById('puzzle-number');
@@ -315,10 +316,17 @@ document.addEventListener('DOMContentLoaded', function() {
   var puzzleDate = getPuzzleDateString().toLowerCase();
   if (puzzleNumElem) puzzleNumElem.textContent = 'toybox #' + puzzleNum;
   if (puzzleDateElem) puzzleDateElem.textContent = puzzleDate;
-  if (cover && startBtn) {
+  if (cover && startBtn && gameBox) {
     cover.style.display = 'flex';
-    startBtn.onclick = function() {
+    gameBox.classList.add('game-covered');
+    // Prevent clicks from propagating through the cover
+    cover.addEventListener('click', function(e) {
+      e.stopPropagation();
+    });
+    startBtn.onclick = function(e) {
+      e.stopPropagation();
       cover.style.display = 'none';
+      gameBox.classList.remove('game-covered');
       gameStarted = true;
       gameEnded = false;
       startTimer();
@@ -349,21 +357,22 @@ function onMouseMove(e) {
   curpiece.style.top = (e.pageY - dragOffsetY) + 'px';
 }
 
-// Patch setpiece to disallow interaction until game starts and after win
-var origSetpiece = setpiece;
-setpiece = function(e) {
-  if (!gameStarted) return;
+function setpiece(e) {
+  // Early return if game hasn't started
+  if (!gameStarted) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+  
+  // Disallow dropping in dragbox after win
   if (gameEnded && e.type === 'mouseup') {
-    // Disallow dropping in dragbox after win
     var dropTarget = document.elementFromPoint(e.clientX, e.clientY);
     if (dropTarget && (dropTarget.id === 'drag-box' || (dropTarget.closest && dropTarget.closest('#drag-box')))) {
       return;
     }
   }
-  return origSetpiece.apply(this, arguments);
-};
-
-function setpiece(e) {
+  
   if (e.type == 'mousedown') {
     var target = e.target.closest('.drag');
     // Robust: if not found, check all .drag pieces on the board for bounding box hit
