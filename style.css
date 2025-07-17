@@ -278,6 +278,14 @@ section#begin .steps {
   align-items: center;
 }
 
+.steps > a {
+  gap: 16px;
+  padding: 25px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+}
+
 
 
 section#faq {
