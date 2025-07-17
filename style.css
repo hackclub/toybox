@@ -91,6 +91,7 @@ section#open {
   /* height: 100vh; */
   justify-content: center;
   padding: 120px 0;
+  padding-bottom: 80px;
   /* padding-top: 100px; */
 }
 
@@ -330,6 +331,14 @@ footer {
 
 
 
+#game {
+  /* border: 4px solid var(--dbrown); */
+  background-color: var(--yellow);
+  width: 80%;
+  padding: 15px 25px;
+  border-radius: 25px;
+  margin: 24px 0;
+}
 
 
 

@@ -205,97 +205,172 @@ for (var i = 0; i < count; i++){
 
 
 
-// when a piece starts dragging or releases
+// --- DRAG AND DROP IMPROVEMENT START ---
+// Variables for drag
+var dragOffsetX = 0;
+var dragOffsetY = 0;
+var origParent = null;
+var origNextSibling = null;
+var dragging = false;
+// New: which sub-square of the piece was grabbed
+var grabbedSubRow = 0;
+var grabbedSubCol = 0;
+
+function onMouseMove(e) {
+  if (!dragging || !curpiece) return;
+  curpiece.style.left = (e.pageX - dragOffsetX) + 'px';
+  curpiece.style.top = (e.pageY - dragOffsetY) + 'px';
+}
+
 function setpiece(e) {
   if (e.type == 'mousedown') {
+    var target = e.target.closest('.drag');
+    if (!target) return;
     selected = true;
-    curpiece = e.target.closest('.drag'); // find the piece being dragged
-
-    // if piece picked up
-    if (curpiece) {
-      var col = curpiece.parentElement.id.substring(1, 2);
-      var row = curpiece.parentElement.id.substring(2, 3);
-
-      // col + height, row + width
-      var pheight = parseInt(curpiece.id.substring(2, 3));
-      var pwidth = parseInt(curpiece.id.substring(3, 4));
-
-      // set the board of that piece to null, if it came from the board
-      if (curpiece.parentElement.id.substring(0, 1) == "s") {
-        col = parseInt(col);
-        row = parseInt(row);
-        for (var i = 0; i < pheight; i++){
-          for (var j = 0; j < pwidth; j++){
-            board[col + i][row + j] = null;
-          }
+    curpiece = target;
+    dragging = true;
+    origParent = curpiece.parentNode;
+    origNextSibling = curpiece.nextSibling;
+    var rect = curpiece.getBoundingClientRect();
+    dragOffsetX = e.pageX - rect.left - window.scrollX;
+    dragOffsetY = e.pageY - rect.top - window.scrollY;
+    // New: figure out which sub-square was clicked
+    var subRect = null;
+    var subBoxes = Array.from(curpiece.getElementsByClassName('drag-box-square'));
+    grabbedSubRow = 0;
+    grabbedSubCol = 0;
+    for (var i = 0; i < subBoxes.length; i++) {
+      var r = subBoxes[i].getBoundingClientRect();
+      if (e.pageX >= r.left + window.scrollX && e.pageX <= r.right + window.scrollX && e.pageY >= r.top + window.scrollY && e.pageY <= r.bottom + window.scrollY) {
+        subRect = r;
+        // Figure out row/col in the piece
+        var pheight = parseInt(curpiece.id.substring(2, 3));
+        var pwidth = parseInt(curpiece.id.substring(3, 4));
+        if (pheight === 1) {
+          grabbedSubRow = 0;
+          grabbedSubCol = i;
+        } else if (pwidth === 1) {
+          grabbedSubRow = i;
+          grabbedSubCol = 0;
+        } else {
+          // For 2x2 or larger, assume row-major order
+          grabbedSubRow = Math.floor(i / pwidth);
+          grabbedSubCol = i % pwidth;
         }
-
+        break;
       }
-
-    var boxes = document.querySelectorAll(".single-grid");
-
-    boxes.forEach(function(box, index){
-      box.style.pointerEvents = "auto";
-    })
-
     }
-
-  } else /* mouseup */ {
-    var boxes = document.querySelectorAll(".single-grid");
-
-    boxes.forEach(function(box, index){
-      box.style.pointerEvents = "none";
-    })
-
+    curpiece.style.position = 'absolute';
+    curpiece.style.zIndex = 1000;
+    curpiece.style.pointerEvents = 'none';
+    curpiece.style.left = (e.pageX - dragOffsetX) + 'px';
+    curpiece.style.top = (e.pageY - dragOffsetY) + 'px';
+    document.body.appendChild(curpiece);
+    document.addEventListener('mousemove', onMouseMove);
+  } else if (e.type == 'mouseup') {
+    if (!dragging || !curpiece) return;
+    document.removeEventListener('mousemove', onMouseMove);
+    dragging = false;
     selected = false;
-
-    if (curpiece.parentElement.id.substring(0, 1) == "s"){
-      var col = curpiece.parentElement.id.substring(1, 2);
-      var row = curpiece.parentElement.id.substring(2, 3);
-
-      // col + height, row + width
+    curpiece.style.pointerEvents = 'auto';
+    curpiece.style.visibility = 'hidden';
+    var dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+    curpiece.style.visibility = 'visible';
+    var gridCell = dropTarget && dropTarget.classList && dropTarget.classList.contains('single-grid') ? dropTarget : null;
+    var inSidebar = dropTarget && (dropTarget.id === 'drag-box' || dropTarget.closest && dropTarget.closest('#drag-box'));
+    var placed = false;
+    if (gridCell) {
+      // Try to place the piece in the grid, offset by grabbed sub-square
+      var col = parseInt(gridCell.id.substring(1, 2));
+      var row = parseInt(gridCell.id.substring(2, 3));
       var pheight = parseInt(curpiece.id.substring(2, 3));
       var pwidth = parseInt(curpiece.id.substring(3, 4));
-
-      // set the board values if it was placed down
-      if (row && col) {
-        col = parseInt(col);
-        row = parseInt(row);
-        for (var i = 0; i < pheight; i++){
-          for (var j = 0; j < pwidth; j++){
-            board[col + i][row + j] = curpiece.id.substring(4 + i + j, 5 + i + j);
+      // Offset so the grabbed sub-square lands under the cursor
+      var topLeftCol = col - grabbedSubRow;
+      var topLeftRow = row - grabbedSubCol;
+      var canplace = true;
+      for (var i = 0; i < pheight; i++) {
+        for (var j = 0; j < pwidth; j++) {
+          if (topLeftCol + i < 0 || topLeftCol + i >= 4 || topLeftRow + j < 0 || topLeftRow + j >= 4 || board[topLeftCol + i][topLeftRow + j] != null) {
+            canplace = false;
           }
         }
-
       }
-
+      if (canplace) {
+        // Snap to grid cell
+        var gridId = 's' + topLeftCol + topLeftRow;
+        var snapCell = document.getElementById(gridId);
+        if (snapCell) {
+          snapCell.appendChild(curpiece);
+          curpiece.style.position = '';
+          curpiece.style.zIndex = '';
+          curpiece.style.left = '';
+          curpiece.style.top = '';
+          curpiece.style.visibility = '';
+          placed = true;
+          // Update board state
+          for (var i = 0; i < pheight; i++) {
+            for (var j = 0; j < pwidth; j++) {
+              board[topLeftCol + i][topLeftRow + j] = curpiece.id.substring(4 + i + j, 5 + i + j);
+            }
+          }
+        }
+      }
     }
-
+    // --- Allow dropping back to sidebar ---
+    if (!placed && inSidebar) {
+      dragbox.appendChild(curpiece);
+      curpiece.style.position = '';
+      curpiece.style.zIndex = '';
+      curpiece.style.left = '';
+      curpiece.style.top = '';
+      curpiece.style.visibility = '';
+      // Remove from board state if it was on the grid
+      var pheight = parseInt(curpiece.id.substring(2, 3));
+      var pwidth = parseInt(curpiece.id.substring(3, 4));
+      for (var i = 0; i < 4; i++) {
+        for (var j = 0; j < 4; j++) {
+          if (board[i][j] && curpiece.id.includes(board[i][j])) {
+            board[i][j] = null;
+          }
+        }
+      }
+      placed = true;
+    }
+    if (!placed) {
+      // Return to drag area
+      if (origNextSibling && origNextSibling.parentNode === origParent) {
+        origParent.insertBefore(curpiece, origNextSibling);
+      } else {
+        origParent.appendChild(curpiece);
+      }
+      curpiece.style.position = '';
+      curpiece.style.zIndex = '';
+      curpiece.style.left = '';
+      curpiece.style.top = '';
+      curpiece.style.visibility = '';
+    }
     curpiece = null;
-
-    // check if win
+    // Check win condition
     var win = true;
-    for (var i = 0; i < 4; i++){
-      for (var j = 0; j < 4; j++){
+    for (var i = 0; i < 4; i++) {
+      for (var j = 0; j < 4; j++) {
         if (board[i][j] == null) {
           win = false;
-          return;
         }
-        if (board[i][j] != board[j][i]){
+        if (board[i][j] != board[j][i]) {
           win = false;
-          return;
         }
       }
     }
-
     if (win) {
-      title.innerHTML = "you win!!!!! 🎉🎉"
-
-      document.getElementById("confetti-container").innerHTML = '<div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>'
+      titletext.innerHTML = "you win!!!!! 🎉🎉";
+      document.getElementById("confetti-container").innerHTML = '<div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>';
     }
-
   }
 }
+// --- DRAG AND DROP IMPROVEMENT END ---
+
 
 // dragging piece around
 
@@ -353,3 +428,40 @@ var quest = document.getElementById("overlay")
 function toggleq(){
   quest.classList.toggle("show");
 }
+
+// --- Add Clear Board Button ---
+// Add the button to the DOM after the grid is created
+var clearBtn = document.createElement('button');
+clearBtn.textContent = 'Clear Board';
+clearBtn.style.margin = '10px 0';
+clearBtn.style.fontSize = '1.2em';
+clearBtn.style.padding = '8px 20px';
+clearBtn.style.borderRadius = '8px';
+clearBtn.style.background = '#9A754E';
+clearBtn.style.color = '#fff';
+clearBtn.style.border = 'none';
+clearBtn.style.cursor = 'pointer';
+gamegrid.parentElement.insertBefore(clearBtn, gamegrid.nextSibling);
+
+clearBtn.addEventListener('click', function() {
+  // Move all pieces from grid to drag-box
+  var allPieces = document.querySelectorAll('.drag');
+  allPieces.forEach(function(piece) {
+    dragbox.appendChild(piece);
+    piece.style.position = '';
+    piece.style.zIndex = '';
+    piece.style.left = '';
+    piece.style.top = '';
+    piece.style.visibility = '';
+  });
+  // Clear board state
+  for (var i = 0; i < 4; i++) {
+    for (var j = 0; j < 4; j++) {
+      board[i][j] = null;
+    }
+  }
+  // Optionally reset win message
+  titletext.innerHTML = '';
+  document.getElementById('confetti-container').innerHTML = '';
+});
+// --- End Clear Board Button ---
