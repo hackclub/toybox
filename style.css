@@ -744,3 +744,32 @@ div[data-val='0'] {
   opacity: 0.5;
   pointer-events: none;
 }
+
+#end-stats {
+  display: none;
+  /* padding: 2em; */
+  text-align: center;
+  /* background: var(--yellow); */
+  border-radius: 16px;
+  /* margin: 2em auto; */
+  font-size: 1.2em;
+  z-index: 3000;
+  width: 100%;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+}
+#end-stats button {
+  background: var(--dbrown);
+  color: var(--lbrown);
+  border: none;
+  border-radius: 25px;
+  font-size: 1em;
+  padding: 0.5em 1.5em;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+}
+#end-stats button:active {
+  background: var(--blue);
+}

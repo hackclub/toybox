@@ -364,7 +364,7 @@ function setpiece(e) {
     e.stopPropagation();
     return;
   }
-  
+
   // Disallow dropping in dragbox after win
   if (gameEnded && e.type === 'mouseup') {
     var dropTarget = document.elementFromPoint(e.clientX, e.clientY);
@@ -372,7 +372,7 @@ function setpiece(e) {
       return;
     }
   }
-  
+
   if (e.type == 'mousedown') {
     var target = e.target.closest('.drag');
     // Robust: if not found, check all .drag pieces on the board for bounding box hit
@@ -839,20 +839,26 @@ function endGame() {
   if (gameEnded) return;
   gameEnded = true;
   stopTimer();
-  // Replace drag box with time and copy button
+  // Show end stats and hide drag box
   var dragbox = document.getElementById('drag-box');
+  var endStats = document.getElementById('end-stats');
   var timeStr = (timerElem ? timerElem.textContent : '');
   var puzzleDate = getPuzzleDateString().toLowerCase();
   var puzzleNum = getPuzzleNumber();
-  if (dragbox) {
-    dragbox.innerHTML = '<div style="padding:2em;text-align:center;">toybox #' + puzzleNum + '<br>' + puzzleDate + '<br>🕓 <span id="final-time" style="font-weight:bold;">' + timeStr + '</span><br><button id="copy-time-btn" style="margin-top:1em;font-size:1em;padding:0.5em 1.5em;">Copy time</button></div>';
+  if (dragbox) dragbox.style.display = 'none';
+  if (endStats) {
+    document.getElementById('end-puzzle-number').textContent = 'toybox #' + puzzleNum;
+    document.getElementById('end-puzzle-date').textContent = puzzleDate;
+    document.getElementById('final-time').textContent = timeStr;
+    endStats.style.display = 'flex';
     var copyBtn = document.getElementById('copy-time-btn');
     if (copyBtn) {
+      copyBtn.textContent = 'copy time';
       copyBtn.onclick = function() {
-        var msg = `[toybox #${puzzleNum}]\n${puzzleDate}\n🕓 ${timeStr}\nhttps://toybox.hackclub.com`;
+        var msg = `[toybox #${puzzleNum}]\n${puzzleDate}\n🕓 ${timeStr}\ntoybox.hackclub.com`;
         navigator.clipboard.writeText(msg).then(function() {
-          copyBtn.textContent = 'Copied!';
-          setTimeout(function() { copyBtn.textContent = 'Copy time'; }, 1500);
+          copyBtn.textContent = 'copied!';
+          setTimeout(function() { copyBtn.textContent = 'copy time'; }, 1500);
         });
       };
     }
