@@ -129,17 +129,19 @@ section#sample .interactive {
 }
 
 
-/*
+
 
 section#sample .interactive  {
-  width: 100%;
-  aspect-ratio: 1.4;
-} */
+  position: relative;
+  /* width: 100%;
+  aspect-ratio: 1.4; */
+}
 
 #numbers {
   background-color: var(--lbrown);
   border-radius: 25px;
   width: 100%;
+  position: relative;
 
 }
 

@@ -68,27 +68,39 @@
 
 
               <div class="game-box box">
-
-
-                <div class="">
                   <div class="">
-                    <div id="grid-snap">
+                    <div class="" style="display: flex; justify-content: space-between; align-items: center;">
+
+                      <span style="padding: 25px;"><span id="puzzle-number">1</span></span>
+
+                      <span id="timer" style="padding: 25px;">00:00</span>
+
+                      <button type="button" name="button" onclick="clearBoard()" id="clear-button">clear board</button>
 
                     </div>
-                    <div id="game-grid" class="game-grid">
+
+                    <div class="">
+                      <div id="grid-snap">
+
+                      </div>
+                      <div id="game-grid" class="game-grid">
+                      </div>
                     </div>
                   </div>
 
-                  <button type="button" name="button" onclick="clearBoard()" id="clear-button">clear board</button>
+
+
+                  <div id="drag-box">
+
+                  </div>
+
+
 
                 </div>
 
 
 
 
-                <div id="drag-box">
-
-                </div>
 
 
                 <div id="game-cover">
@@ -96,7 +108,6 @@
                   <button id="start-game-btn" style="font-size:1.5em;padding:0.5em 2em;">Start</button>
                 </div>
               </div>
-              <span id="timer" style="font-size:1.2em;margin-left:20px;display:none;">00:00</span>
 
             </div>
 

@@ -62,19 +62,55 @@ var today = new Date()
 var day = " " + today.getDate() + " " + today.getMonth() + " " + today.getFullYear()
 
 
+// --- Seeded RNG for Daily Puzzle ---
+function mulberry32(seed) {
+  return function() {
+    var t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+function getDailySeed() {
+  var today = new Date();
+  var y = today.getFullYear();
+  var m = today.getMonth() + 1;
+  var d = today.getDate();
+  return parseInt('' + y + (m < 10 ? '0' : '') + m + (d < 10 ? '0' : '') + d);
+}
+
+var dailySeed = getDailySeed();
+var seededRandom = mulberry32(dailySeed);
+
+function seededChoose(choices) {
+  var index = Math.floor(seededRandom() * choices.length);
+  return choices[index];
+}
+
+function seededShuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(seededRandom() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
+
 // yes! the magic generation!
 var count = 0;
 for (var i = 0; i < 4; i++){
 	for (var j = 0; j < 4; j++){
 		if (cursplit[i][j] == null){
 			var finished = false;
-			var ori = choose(choices);
+			var ori = seededChoose(choices);
 			var ori_width = ori[0];
 			var ori_height = ori[1];
 
 			var testc = 0
 			while (i + ori_height > 4 || j + ori_width  > 4) {
-				ori = choose(choices);
+				ori = seededChoose(choices);
 				ori_width = ori[0];
 				ori_height = ori[1];
 				testc ++;
@@ -104,7 +140,7 @@ for (var i = 0; i < 4; i++){
 // and then the solution numbers
 for (var i = 0; i < 4; i++){
 	for (var j = i; j < 4; j++){
-		rangen[j][i] = rangen[i][j] = choose(nums);
+		rangen[j][i] = rangen[i][j] = seededChoose(nums);
 	}
 }
 console.log(cursplit);
@@ -183,7 +219,7 @@ for (var i = 0; i < 4; i++){
 
 
 
-pieces = shuffle(pieces);
+pieces = seededShuffle(pieces);
 
 for (var i = 0; i < count; i++){
   var piece = document.createElement("div");
@@ -241,7 +277,6 @@ function startTimer() {
   timerPausedAt = 0;
   timerPaused = false;
   timerElem = document.getElementById('timer');
-  timerElem.style.display = '';
   timerInterval = setInterval(updateTimerDisplay, 200);
 }
 
@@ -273,6 +308,13 @@ document.addEventListener('DOMContentLoaded', function() {
   var cover = document.getElementById('game-cover');
   var startBtn = document.getElementById('start-game-btn');
   timerElem = document.getElementById('timer');
+  // Set puzzle number and date in the UI
+  var puzzleNumElem = document.getElementById('puzzle-number');
+  var puzzleDateElem = document.getElementById('puzzle-date');
+  var puzzleNum = getPuzzleNumber();
+  var puzzleDate = getPuzzleDateString().toLowerCase();
+  if (puzzleNumElem) puzzleNumElem.textContent = 'toybox #' + puzzleNum;
+  if (puzzleDateElem) puzzleDateElem.textContent = puzzleDate;
   if (cover && startBtn) {
     cover.style.display = 'flex';
     startBtn.onclick = function() {
@@ -759,15 +801,52 @@ function updateGhostImages() {
   }
 }
 
+// --- Daily Puzzle Info ---
+function getPuzzleDateObj() {
+  // Use the same date as the seed
+  var today = new Date();
+  var y = today.getFullYear();
+  var m = today.getMonth() + 1;
+  var d = today.getDate();
+  return { y, m, d };
+}
+function getPuzzleDateString() {
+  var { y, m, d } = getPuzzleDateObj();
+  // Format as 'July 17, 2025'
+  var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  return months[m - 1] + ' ' + d + ', ' + y;
+}
+function getPuzzleNumber() {
+  // July 17, 2025 is #1
+  var start = new Date(2025, 6, 17); // months are 0-indexed
+  var today = new Date();
+  var diff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+  return diff + 1;
+}
+// --- End Daily Puzzle Info ---
+
 // --- End Game Logic ---
 function endGame() {
   if (gameEnded) return;
   gameEnded = true;
   stopTimer();
-  // Replace drag box with time
+  // Replace drag box with time and copy button
   var dragbox = document.getElementById('drag-box');
+  var timeStr = (timerElem ? timerElem.textContent : '');
+  var puzzleDate = getPuzzleDateString().toLowerCase();
+  var puzzleNum = getPuzzleNumber();
   if (dragbox) {
-    dragbox.innerHTML = '<div style="font-size:2em;padding:2em;text-align:center;">Time: <span style="font-weight:bold;">' + (timerElem ? timerElem.textContent : '') + '</span></div>';
+    dragbox.innerHTML = '<div style="padding:2em;text-align:center;">Toybox #' + puzzleNum + '<br>' + puzzleDate + '<br>Time: <span id="final-time" style="font-weight:bold;">' + timeStr + '</span><br><button id="copy-time-btn" style="margin-top:1em;font-size:1em;padding:0.5em 1.5em;">Copy time</button></div>';
+    var copyBtn = document.getElementById('copy-time-btn');
+    if (copyBtn) {
+      copyBtn.onclick = function() {
+        var msg = `[toybox #${puzzleNum}]\n${puzzleDate}\n🕓 ${timeStr}\nhttps://toybox.hackclub.com`;
+        navigator.clipboard.writeText(msg).then(function() {
+          copyBtn.textContent = 'Copied!';
+          setTimeout(function() { copyBtn.textContent = 'Copy time'; }, 1500);
+        });
+      };
+    }
   }
   document.getElementById("confetti-container").innerHTML = '<div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div><div class="confetti"></div>';
 }
