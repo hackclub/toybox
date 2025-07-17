@@ -103,6 +103,8 @@ section#sample {
   background-color: var(--dbrown);
   padding: 40px;
 
+
+
 }
 
 #sample img#reqs {
@@ -189,6 +191,9 @@ section#sample .interactive  {
   text-decoration: none;
 }
 
+section#prize {
+  text-align: center;
+}
 
 section#prize .hor  {
   display: flex;
@@ -584,7 +589,7 @@ div[data-val='0'] {
 
   }
 
-  .steps div {
+  .steps div, .steps > a {
     left: 0 !important;
   }
 }
