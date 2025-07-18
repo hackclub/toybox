@@ -369,6 +369,7 @@ footer {
   position: relative;
 }
 
+/* Restore game CSS now that touch events are fixed */
 #game-cover {
   position: absolute;
   top: 0;
@@ -382,13 +383,13 @@ footer {
   justify-content: center;
   z-index: 2000;
   pointer-events: auto;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-/* Disable game interactions when cover is visible */
-.game-box.game-covered .drag,
-.game-box.game-covered .single-grid,
-.game-box.game-covered #drag-box {
-  pointer-events: none !important;
+/* Make game-box the positioning context for the cover */
+.game-box {
+  position: relative;
 }
 
 #game-cover button {
@@ -403,14 +404,12 @@ footer {
   font-size: inherit;
 }
 
+
 .box {
-  /* border: 3px solid var(--blue); */
-  /* background-color: var(--white); */
   padding: 10px 10px;
   margin: 20px 0;
   box-sizing: border-box;
 }
-
 
 .game-grid {
   border: 3px solid var(--dbrown);
@@ -420,20 +419,15 @@ footer {
   display: flex;
   flex-wrap: wrap;
   aspect-ratio: 1;
-  /* pointer-events: none; */
 }
 
 .single-grid {
-
   height: var(--px);
   width: var(--px);
   box-sizing: border-box;
   border: 3px solid var(--dbrown);
   user-select: none;
-  /* pointer-events: none; */
 }
-
-
 
 #drag-box {
   display: flex;
@@ -447,10 +441,8 @@ footer {
 .drag {
   pointer-events: auto;
   box-sizing: border-box;
-  /* border: 3px solid var(--dbrown); */
   display: flex;
   justify-content: space-between;
-  /* background-color: var(--dbrown); */
   user-select: none;
   box-sizing: border-box;
   border-radius: 8px;
@@ -465,6 +457,67 @@ footer {
   opacity: 0.3;
   pointer-events: none;
   z-index: 0;
+}
+
+.drag-box-square {
+  box-sizing: border-box;
+  height: calc(var(--px) - 6px);
+  width: calc(var(--px) - 6px);
+  user-select: none;
+  position: relative;
+  pointer-events: none;
+}
+
+.drag-box-square > * {
+  pointer-events: none;
+}
+
+.drag-box-square p {
+  font-size: 24px;
+  text-align: center;
+  margin: calc(50% - 12px - 2px) 0;
+  padding: 0;
+}
+
+/* Game interaction rules */
+.game-box.game-covered .drag,
+.game-box.game-covered .single-grid,
+.game-box.game-covered #drag-box,
+.game-box.game-covered #game-grid {
+  pointer-events: none !important;
+}
+
+.game-box:not(.game-covered) .drag,
+.game-box:not(.game-covered) .single-grid,
+.game-box:not(.game-covered) #drag-box,
+.game-box:not(.game-covered) #game-grid {
+  pointer-events: auto !important;
+}
+
+/* Mobile touch optimizations */
+.drag {
+  touch-action: manipulation;
+}
+
+.single-grid {
+  touch-action: manipulation;
+}
+
+#drag-box {
+  touch-action: manipulation;
+}
+
+#game-grid {
+  touch-action: manipulation;
+}
+
+#end-stats, #game-cover {
+  touch-action: manipulation;
+}
+
+#clear-button, #start-game-btn, #copy-time-btn {
+  touch-action: manipulation;
+  min-height: 44px;
 }
 
 /* Connector for horizontal pieces (row flex) */
@@ -690,25 +743,152 @@ div[data-val='0'] {
     display: none;
   }
 
+  /* Game-specific mobile styles */
+  .game-box {
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .game-grid {
+    height: calc(60px * 4);
+    width: calc(60px * 4);
+    margin: 10px auto;
+  }
+
+  .single-grid {
+    height: 60px;
+    width: 60px;
+  }
+
+  .drag {
+    border-radius: 6px;
+  }
+
+  .drag-box-square {
+    height: calc(60px - 6px);
+    width: calc(60px - 6px);
+  }
+
+  .d12 {
+    height: calc(60px - 6px);
+    width: calc(2 * 60px - 6px);
+  }
+
+  .d21 {
+    height: calc(2 * 60px - 6px);
+    width: calc(60px - 6px);
+  }
+
+  .d13 {
+    height: calc(60px - 6px);
+    width: calc(3 * 60px - 6px);
+  }
+
+  .d31 {
+    height: calc(3 * 60px - 6px);
+    width: calc(60px - 6px);
+  }
+
+  .d11 {
+    height: calc(60px - 6px);
+    width: calc(60px - 6px);
+  }
+
+  #drag-box {
+    min-height: 15vh;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  #clear-button {
+    width: 80px;
+    height: 40px;
+    font-size: 0.8em;
+    padding: 8px;
+  }
+
+  /* Game header mobile layout */
+  .game-box > div:first-child > div:first-child {
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .game-box > div:first-child > div:first-child > span {
+    padding: 10px !important;
+  }
+
+  #timer {
+    font-size: 1.1em;
+    font-weight: bold;
+  }
+
+  /* Game cover mobile styles */
+  #game-cover {
+    padding: 20px;
+  }
+
+  #game-cover h2 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+  }
+
+  #game-cover img {
+    max-width: 80%;
+    height: auto;
+  }
+
+  #game-cover p {
+    font-size: 0.9em;
+    margin: 10px 0;
+  }
+
+  #game-cover button {
+    padding: 15px 30px;
+    font-size: 1.1em;
+  }
+
+  /* End stats mobile styles */
+  #end-stats {
+    padding: 20px;
+    font-size: 1em;
+    width: auto !important;
+  }
+
+  #end-stats button {
+    padding: 12px 24px;
+    font-size: 0.9em;
+  }
+
+  /* Connector adjustments for mobile */
+  .d12 .drag-box-square:not(:last-child)::after,
+  .d13 .drag-box-square:not(:last-child)::after {
+    width: 8px;
+    height: 24px;
+    right: -4px;
+  }
+
+  .d21 .drag-box-square:not(:last-child)::after,
+  .d31 .drag-box-square:not(:last-child)::after,
+  .d11 .drag-box-square:not(:last-child)::after {
+    width: 24px;
+    height: 8px;
+    bottom: -4px;
+  }
+
+  /* Diagonal line adjustment */
+  #game-grid::after {
+    width: 3px;
+    height: 120%;
+    top: -110%;
+  }
 
   #sample-examples div {
     width: 48%;
   }
 
-
-  section#prize .hor  {
+  section#prize .hor {
     flex-flow: column;
-    /* display: flex; */
-    /* width: 100%;
-    align-items: center;
-    padding: 25px;
-    box-sizing: border-box;
-
-    flex-flow: row;
-    justify-content: center;
-    gap: 20px;
-    padding: 45px; */
-
   }
 
   .steps div, .steps > a {
@@ -772,4 +952,59 @@ div[data-val='0'] {
 }
 #end-stats button:active {
   background: var(--blue);
+}
+
+/* Remove or restrict global user-select/touch rules */
+/* * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+} */
+
+/* Remove problematic rules that block mobile interactions */
+/* .game-box, .game-box * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+} */
+
+/* Only apply touch-action to specific game elements that need it */
+
+.drag {
+  touch-action: manipulation;
+}
+
+.single-grid {
+  touch-action: manipulation;
+}
+
+#drag-box {
+  touch-action: manipulation;
+}
+
+#game-grid {
+  touch-action: manipulation;
+}
+
+#end-stats, #game-cover {
+  touch-action: manipulation;
+}
+
+#clear-button, #start-game-btn, #copy-time-btn {
+  touch-action: manipulation;
+  min-height: 44px;
+}
+
+/* Test rule to ensure links are clickable */
+a {
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }

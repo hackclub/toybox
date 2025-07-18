@@ -174,6 +174,9 @@ var boxarray = document.getElementsByClassName("drag");
 
 document.addEventListener("mousedown", setpiece);
 document.addEventListener("mouseup", setpiece);
+// Remove global touch listeners that interfere with page interactions
+// document.addEventListener("touchstart", setpiece, { passive: false });
+// document.addEventListener("touchend", setpiece, { passive: false });
 
 // pick split
 var split = 0;
@@ -185,6 +188,8 @@ for (var i = 0; i < cols; i++){
     square.classList.add("single-grid");
     gamegrid.appendChild(square);
     square.addEventListener("mouseenter", mouseenter, false);
+    square.addEventListener("touchstart", setpiece, { passive: false });
+    square.addEventListener("touchend", setpiece, { passive: false });
     square.id = 's' + i + j;
   }
 }
@@ -245,8 +250,10 @@ for (var i = 0; i < count; i++){
 
   dragbox.appendChild(piece);
 
+  // Add touch event listeners specifically to game elements
+  piece.addEventListener("touchstart", setpiece, { passive: false });
+  piece.addEventListener("touchend", setpiece, { passive: false });
 }
-
 
 
 // --- Game Cover, Timer, and End State ---
@@ -357,6 +364,13 @@ function onMouseMove(e) {
   curpiece.style.top = (e.pageY - dragOffsetY) + 'px';
 }
 
+function onTouchMove(e) {
+  if (!dragging || !curpiece) return;
+  e.preventDefault(); // Prevent scrolling while dragging
+  curpiece.style.left = (e.touches[0].pageX - dragOffsetX) + 'px';
+  curpiece.style.top = (e.touches[0].pageY - dragOffsetY) + 'px';
+}
+
 function setpiece(e) {
   // Early return if game hasn't started
   if (!gameStarted) {
@@ -364,7 +378,7 @@ function setpiece(e) {
     e.stopPropagation();
     return;
   }
-
+  
   // Disallow dropping in dragbox after win
   if (gameEnded && e.type === 'mouseup') {
     var dropTarget = document.elementFromPoint(e.clientX, e.clientY);
@@ -373,7 +387,14 @@ function setpiece(e) {
     }
   }
 
-  if (e.type == 'mousedown') {
+  // Handle touch events
+  var isTouch = e.type.startsWith('touch');
+  var clientX = isTouch ? e.touches[0]?.clientX || e.changedTouches[0]?.clientX : e.clientX;
+  var clientY = isTouch ? e.touches[0]?.clientY || e.changedTouches[0]?.clientY : e.clientY;
+  var pageX = isTouch ? e.touches[0]?.pageX || e.changedTouches[0]?.pageX : e.pageX;
+  var pageY = isTouch ? e.touches[0]?.pageY || e.changedTouches[0]?.pageY : e.pageY;
+  
+  if (e.type == 'mousedown' || e.type == 'touchstart') {
     var target = e.target.closest('.drag');
     // Robust: if not found, check all .drag pieces on the board for bounding box hit
     if (!target) {
@@ -381,8 +402,8 @@ function setpiece(e) {
       for (var i = 0; i < allPieces.length; i++) {
         var rect = allPieces[i].getBoundingClientRect();
         if (
-          e.clientX >= rect.left && e.clientX <= rect.right &&
-          e.clientY >= rect.top && e.clientY <= rect.bottom
+          clientX >= rect.left && clientX <= rect.right &&
+          clientY >= rect.top && clientY <= rect.bottom
         ) {
           target = allPieces[i];
           break;
@@ -413,8 +434,8 @@ function setpiece(e) {
       lastBoardWidth = parseInt(curpiece.id.substring(3, 4));
     }
     var rect = curpiece.getBoundingClientRect();
-    dragOffsetX = e.pageX - rect.left - window.scrollX;
-    dragOffsetY = e.pageY - rect.top - window.scrollY;
+    dragOffsetX = pageX - rect.left - window.scrollX;
+    dragOffsetY = pageY - rect.top - window.scrollY;
     // Clear previous board cells if piece is on the grid
     if (lastBoardCol !== null && lastBoardRow !== null) {
       for (var i = 0; i < lastBoardHeight; i++) {
@@ -431,7 +452,7 @@ function setpiece(e) {
     grabbedSubCol = 0;
     for (var i = 0; i < subBoxes.length; i++) {
       var r = subBoxes[i].getBoundingClientRect();
-      if (e.pageX >= r.left + window.scrollX && e.pageX <= r.right + window.scrollX && e.pageY >= r.top + window.scrollY && e.pageY <= r.bottom + window.scrollY) {
+      if (pageX >= r.left + window.scrollX && pageX <= r.right + window.scrollX && pageY >= r.top + window.scrollY && pageY <= r.bottom + window.scrollY) {
         var pheight = parseInt(curpiece.id.substring(2, 3));
         var pwidth = parseInt(curpiece.id.substring(3, 4));
         if (pheight === 1) {
@@ -450,26 +471,28 @@ function setpiece(e) {
     curpiece.style.position = 'absolute';
     curpiece.style.zIndex = 1000;
     curpiece.style.pointerEvents = 'auto';
-    curpiece.style.left = (e.pageX - dragOffsetX) + 'px';
-    curpiece.style.top = (e.pageY - dragOffsetY) + 'px';
+    curpiece.style.left = (pageX - dragOffsetX) + 'px';
+    curpiece.style.top = (pageY - dragOffsetY) + 'px';
     document.body.appendChild(curpiece);
     document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
     // Remove all crosses from this piece (in case it's being moved)
     var squares = curpiece.querySelectorAll('.drag-box-square');
     squares.forEach(function(sq) {
       var cross = sq.querySelector('.red-cross');
       if (cross) cross.remove();
     });
-  } else if (e.type == 'mouseup') {
+  } else if (e.type == 'mouseup' || e.type == 'touchend') {
     if (!dragging || !curpiece) return;
     document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('touchmove', onTouchMove);
     dragging = false;
     selected = false;
     if (curpiece) {
       curpiece.style.pointerEvents = 'none';
       curpiece.style.visibility = 'hidden';
     }
-    var dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+    var dropTarget = document.elementFromPoint(clientX, clientY);
     if (dropTarget && dropTarget.classList && dropTarget.classList.contains('ghost-img')) {
       dropTarget = dropTarget.parentElement;
     }
