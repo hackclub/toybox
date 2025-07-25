@@ -59,6 +59,7 @@ h1 {
   color: var(--lbrown);
   text-shadow: 2px 2px var(--red);
   font-size: 2em;
+  text-align: center;
 }
 
 h1.section {
@@ -145,6 +146,46 @@ section#sample .interactive  {
 
 }
 
+
+.submitted-scrolling {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  padding: 24px;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.submitted-game {
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  width: 18%;
+  box-sizing: border-box;
+  background-color: var(--dbrown);
+  border-radius: 25px;
+  padding: 10px;
+  color: var(--lbrown);
+}
+
+.submitted-game img {
+  width: 80%;
+  border-radius: 15px;
+}
+
+
+.submitted-game a {
+  display: inline-block;
+  text-align: center;
+  background-color: var(--green);
+  color: var(--lbrown);
+  padding: 5px 25px;
+  border-radius: 25px;
+  text-decoration: none;
+}
+
+
 /* #samples {
   width: 100%;
   aspect-ratio: 1.4;
@@ -182,6 +223,10 @@ section#sample .interactive  {
   padding: 5px 25px;
   border-radius: 25px;
   text-decoration: none;
+}
+
+#sample-examples div p:has(a):hover {
+  background-color: var(--blue);
 }
 
 #sample-examples div p {
@@ -884,6 +929,10 @@ div[data-val='0'] {
   }
 
   #sample-examples div {
+    width: 48%;
+  }
+
+  .submitted-game {
     width: 48%;
   }
 
